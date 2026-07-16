@@ -20,7 +20,7 @@ void enable_rawmode() {
 	raw.c_iflag &= ~(IXON); //turn off ctrl-s and ctrl-q
 
 	//turn off echo characters,turn off canonical mode,turn off ctrl-c and ctrl-z signals
-	raw.c_lflag &= ~(ECHO | ICANON | ISIG); 
+	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN| ISIG); 
 
 	tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw);
 }
