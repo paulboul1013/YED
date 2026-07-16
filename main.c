@@ -17,7 +17,7 @@ void enable_rawmode() {
 	
 	struct termios raw = orig_termios;
 
-	raw.c_iflag &= ~(IXON); //turn off ctrl-s and ctrl-q
+	raw.c_iflag &= ~(ICRNL | IXON); //turn off ctrl-s and ctrl-q, and translate '\r' to '\n'
 
 	//turn off echo characters,turn off canonical mode,turn off ctrl-c and ctrl-z signals
 	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN| ISIG); 
