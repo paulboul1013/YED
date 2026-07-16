@@ -17,7 +17,7 @@ void enable_rawmode() {
 	
 	struct termios raw = orig_termios;
 
-	raw.c_lflag &= ~(ECHO | ICANON); //close echo characters
+	raw.c_lflag &= ~(ECHO | ICANON | ISIG); //close echo characters
 
 	tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw);
 }
