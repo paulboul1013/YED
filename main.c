@@ -1,0 +1,22 @@
+#include <termios.h>
+#include <unistd.h>
+
+void enable_rawmode() {
+	struct termios raw;
+
+	tcgetattr(STDIN_FILENO,&raw);
+
+	raw.c_lflag &= ~(ECHO);
+
+	tcsetattr(STDIN_FILENO, TCSALUSH,&raw);
+}
+
+int main() {
+
+	enable_rawmode();
+
+    char c;
+    while (read(STDIN_FILENO,&c,1)==1 && c != 'q');
+    
+    return 0;
+}
