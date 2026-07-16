@@ -18,6 +18,7 @@ void enable_rawmode() {
 	struct termios raw = orig_termios;
 
 	raw.c_iflag &= ~(ICRNL | IXON); //turn off ctrl-s and ctrl-q, and translate '\r' to '\n'
+	raw.c_oflag &= ~(OPOST); //turn off output processing，'\r\n' to '\n'
 
 	//turn off echo characters,turn off canonical mode,turn off ctrl-c and ctrl-z signals
 	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN| ISIG); 
@@ -32,9 +33,9 @@ int main() {
     char c;
     while (read(STDIN_FILENO,&c,1)==1 && c != 'q') {
 		if (iscntrl(c)) {
-			printf("%d\n",c);
+			printf("%d\r\n",c);
 		} else {
-			printf("%d ('%c')\n",c,c);
+			printf("%d ('%c')\r\n",c,c);
 		}
 	}
     
