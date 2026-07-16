@@ -8,7 +8,7 @@ void enable_rawmode() {
 
 	raw.c_lflag &= ~(ECHO);
 
-	tcsetattr(STDIN_FILENO, TCSALUSH,&raw);
+	tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw);
 }
 
 int main() {
