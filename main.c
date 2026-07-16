@@ -11,6 +11,8 @@
 
 //data
 struct editor_config {
+	int screen_rows;
+	int screen_cols;
 	struct termios orig_termios;
 	
 };
@@ -116,9 +118,16 @@ void editor_process_keypress() {
 }
 
 //init
+void init_editor() {
+	if (get_window_size(&E.screen_rows,&E.screen_cols)==-1) {
+		die("get_window_size");
+	}
+}
+
 int main() {
 
 	enable_rawmode();
+	init_editor();
 
 	while (1) {
 		editor_refresh_screen();
