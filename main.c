@@ -111,7 +111,7 @@ int get_window_size(int *rows,int *cols) {
 		if (write(STDOUT_FILENO,"\x1b[999C\x1b[999B",12)!=12) {
 			return -1;
 		}
-		get_cursor_position(rows,cols);
+		return get_cursor_position(rows,cols);
 	} else {
 		*cols = ws.ws_col;
 		*rows = ws.ws_row;
