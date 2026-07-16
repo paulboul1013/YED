@@ -9,8 +9,12 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 //data
+struct editor_config {
+	struct termios orig_termios;
+	
+};
 
-struct termios orig_termios;
+struct editor_config E;
 
 //terminal
 
@@ -23,20 +27,20 @@ void die(const char *s) {
 }
 
 void disable_rawmode() {
-	if (tcsetattr(STDIN_FILENO,TCSAFLUSH,&orig_termios)==-1) {
+	if (tcsetattr(STDIN_FILENO,TCSAFLUSH,&E.orig_termios)==-1) {
 		die("tcsetattr");
 	}
 }
 
 void enable_rawmode() {
 	//get terminal input
-	if (tcgetattr(STDIN_FILENO,&orig_termios)==-1){
+	if (tcgetattr(STDIN_FILENO,&E.orig_termios)==-1){
 		die("tcgetattr");
 	} 
 	atexit(disable_rawmode); //when program exit, disable raw mode
 
 	
-	struct termios raw = orig_termios;
+	struct termios raw = E.orig_termios;
 
 	raw.c_iflag &= ~(BRKINT | INPCK | ISTRIP | ICRNL | IXON); //turn off ctrl-s and ctrl-q, and translate '\r' to '\n'
 	raw.c_oflag &= ~(OPOST); //turn off output processing，'\r\n' to '\n'
