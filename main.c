@@ -194,7 +194,10 @@ void editor_refresh_screen() {
 
 	editor_draw_rows(&ab);
 
-	ab_append(&ab,"\x1b[H",3); 
+	char buf[32];
+	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",E.cy+1,E.cx+1);
+	ab_append(&ab,buf,strlen(buf));
+
 	ab_append(&ab,"\x1b[?25h",6); //show cursor
 
 	write(STDOUT_FILENO,ab.b, ab.len); //cursor move to the top-left position
@@ -205,6 +208,24 @@ void editor_refresh_screen() {
 
 
 //input
+void editor_move_cursor(char key) {
+	switch (key) {
+		case 'a':
+			E.cx--;
+			break;
+
+		case 'd':
+			E.cx++;
+			break;
+		case 'w':
+			E.cy--;
+			break;
+		case 's':
+			E.cy++;
+			break;
+	}
+}
+
 void editor_process_keypress() {
 	char c = editor_readkey();
 
@@ -214,6 +235,13 @@ void editor_process_keypress() {
 			write(STDOUT_FILENO,"\x1b[H",3);
 			exit(0);
 			break;
+
+		case 'w':
+		case 's':
+		case 'a':
+		case 'd':
+			editor_move_cursor(c);
+			break;
 	}
 }
 
@@ -222,7 +250,7 @@ void init_editor() {
 
 	E.cx = 0;
 	E.cy = 0;
-	
+
 	if (get_window_size(&E.screen_rows,&E.screen_cols)==-1) {
 		die("get_window_size");
 	}
