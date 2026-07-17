@@ -162,10 +162,14 @@ void editor_draw_rows(struct abuf *ab) {
 void editor_refresh_screen() {
 	struct abuf ab = ABUF_INIT;
 	
-	ab_append(&ab,"\x1b[2J",4);
-	ab_append(&ab,"\x1b[H",3);
+	ab_append(&ab,"\x1b[?25l",6); //hide cursor
+	ab_append(&ab,"\x1b[2J",4); //clean screen
+	ab_append(&ab,"\x1b[H",3);//setting cursor position
 
 	editor_draw_rows(&ab);
+
+	ab_append(&ab,"\x1b[H",3); 
+	ab_append(&ab,"\x1b[?25h",6); //show cursor
 
 	write(STDOUT_FILENO,ab.b, ab.len); //cursor move to the top-left position
 	ab_free(&ab);
