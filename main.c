@@ -1,9 +1,14 @@
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -25,15 +30,23 @@ enum editor_key {
 };
 
 //data
+
+typedef struct erow {
+	int size;
+	char *chars;
+} erow;
+
 struct editor_config {
 	int cx,cy;
 	int screen_rows;
 	int screen_cols;
 	struct termios orig_termios;
-	
+	int numrows;
+	erow row;
 };
 
 struct editor_config E;
+
 
 //terminal
 
@@ -186,6 +199,33 @@ int get_window_size(int *rows,int *cols) {
 	return -1;
 }
 
+//file i/o
+void editor_open(char *filename) {
+	FILE *fp = fopen(filename,"r");
+	if (!fp) {
+		die("fopen");
+	}
+
+	char *line=NULL;
+	size_t linecap = 0;
+	ssize_t linelen;
+
+	linelen = getline(&line,&linecap,fp);
+	if (linelen != -1) {
+		while (linelen > 0 &&  (line[linelen-1]=='\n' ||
+		line[linelen-1]=='\r')){ //strip off the '\r' or '\n' at the end of the line
+			linelen--;
+		}
+		E.row.size=linelen;
+		E.row.chars = malloc(linelen+1);
+		memcpy(E.row.chars,line,linelen);
+		E.row.chars[linelen] = '\0';
+		E.numrows = 1;
+	}
+
+	free(line);
+	fclose(fp);
+}
 
 // append buffer
 struct abuf {
@@ -215,31 +255,37 @@ void ab_free(struct abuf *ab) {
 void editor_draw_rows(struct abuf *ab) {
 	int y;
 	for(y=0;y<E.screen_rows;y++){
-		if (y==E.screen_rows/3) {
-			char welcome[80];
-			int welcome_len=snprintf(welcome,sizeof(welcome),
-		"YED editor -- version %s",YED_VERSION);
+		if (y>=E.numrows) {
+			if (E.numrows==0 && y==E.screen_rows/3) {
+				char welcome[80];
+				int welcome_len=snprintf(welcome,sizeof(welcome),
+			"YED editor -- version %s",YED_VERSION);
 
-			if (welcome_len > E.screen_cols) {
-				welcome_len = E.screen_cols;
-			}
+				if (welcome_len > E.screen_cols) {
+					welcome_len = E.screen_cols;
+				}
 
-			int padding = (E.screen_cols - welcome_len)/2;
-			if (padding) {
+				int padding = (E.screen_cols - welcome_len)/2;
+				if (padding) {
+					ab_append(ab,"~",1);
+					padding--;
+				}
+
+				while(padding--){
+					ab_append(ab," ",1);
+				}
+
+				ab_append(ab,welcome,welcome_len);
+			} else {
 				ab_append(ab,"~",1);
-				padding--;
 			}
 
-			while(padding--){
-				ab_append(ab," ",1);
-			}
-
-			ab_append(ab,welcome,welcome_len);
 		} else {
-			ab_append(ab,"~",1);
+			int len = E.row.size;
+			if (len > E.screen_cols) len = E.screen_cols;
+			ab_append(ab,E.row.chars,len);
 		}
-		
-		
+			
 		ab_append(ab,"\x1b[K",3); //clear from right of the cursor side
 		if (y < E.screen_rows-1) {
 			ab_append(ab,"\r\n",2);
@@ -336,16 +382,21 @@ void init_editor() {
 
 	E.cx = 0;
 	E.cy = 0;
+	E.numrows = 0;
 
 	if (get_window_size(&E.screen_rows,&E.screen_cols)==-1) {
 		die("get_window_size");
 	}
 }
 
-int main() {
+int main(int argc,char *argv[]) {
 
 	enable_rawmode();
 	init_editor();
+	if (argc>=2) {
+		editor_open(argv[1]);
+	}
+	
 
 	while (1) {
 		editor_refresh_screen();
