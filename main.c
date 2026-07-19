@@ -39,6 +39,7 @@ typedef struct erow {
 struct editor_config {
 	int cx,cy;
 	int rowoff;
+	int coloff;
 	int screen_rows;
 	int screen_cols;
 	struct termios orig_termios;
@@ -267,6 +268,12 @@ void editor_scroll() {
 	if (E.cy >= E.rowoff + E.screen_rows) { //out of bottom screen
 		E.rowoff = E.cy - E.screen_rows +1;
 	}
+	if (E.cx < E.coloff) { //in the visible region
+		E.coloff = E.cx;
+	}
+	if (E.cx >= E.coloff+E.screen_cols) { //out of right screen
+		E.coloff = E.cx - E.screen_cols + 1;
+	}
 }
 
 void editor_draw_rows(struct abuf *ab) {
@@ -299,9 +306,10 @@ void editor_draw_rows(struct abuf *ab) {
 			}
 
 		} else {
-			int len = E.row[filerow].size;
+			int len = E.row[filerow].size - E.coloff;
+			if (len < 0) len = 0;
 			if (len > E.screen_cols) len = E.screen_cols;
-			ab_append(ab,E.row[filerow].chars,len);
+			ab_append(ab,&E.row[filerow].chars[E.coloff],len);
 		}
 			
 		ab_append(ab,"\x1b[K",3); //clear from right of the cursor side
@@ -322,7 +330,7 @@ void editor_refresh_screen() {
 	editor_draw_rows(&ab);
 
 	char buf[32];
-	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",(E.cy-E.rowoff+1),E.cx+1);
+	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",(E.cy-E.rowoff+1),(E.cx-E.coloff+1));
 	ab_append(&ab,buf,strlen(buf));
 
 	ab_append(&ab,"\x1b[?25h",6); //show cursor
@@ -344,9 +352,7 @@ void editor_move_cursor(int key) {
 			break;
 
 		case ARROW_RIGHT:
-		if (E.cx!=E.screen_cols-1) {
 			E.cx++;
-		}
 			break;
 		case ARROW_UP:
 		if (E.cy!=0) {
@@ -405,6 +411,7 @@ void init_editor() {
 	E.numrows = 0;
 	E.row = NULL;
 	E.rowoff = 0;
+	E.coloff = 0;
 
 	if (get_window_size(&E.screen_rows,&E.screen_cols)==-1) {
 		die("get_window_size");
