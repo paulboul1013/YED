@@ -40,11 +40,12 @@ typedef struct erow {
 } erow;
 
 struct editor_config {
-	int cx,cy;
-	int rowoff;
-	int coloff;
-	int screen_rows;
-	int screen_cols;
+	int cx,cy; //cursor x and y coordinate
+	int rx; //render x coordinate
+	int rowoff; //row offset
+	int coloff; //column offset
+	int screen_rows; //screen rows
+	int screen_cols; //screen columns
 	struct termios orig_termios;
 	int numrows;
 	erow *row;
@@ -205,6 +206,22 @@ int get_window_size(int *rows,int *cols) {
 }
 
 //row operations
+int editor_row_cx_to_rx(erow *row,int cx) {
+	int rx=0;
+	int j;
+	for(j=0;j<cx;j++) {
+		if (row->chars[j]=='\t') {
+			//ex: a\t\b
+			// meet a and then rx++, rx=1,next is '\t'
+			// rx+=4-(1%4)=4-1=3;
+			// 1+=4 -> rx=5 and then rx++ -> rx=6
+			//so really the b character render index is from 6 start calculate
+			rx+=YED_TAB_STOP-(rx%YED_TAB_STOP);
+		}
+		rx++;
+	}
+	return rx;
+}
 void editor_update_row(erow *row) {
 	int tabs=0;
 	int j;
@@ -297,17 +314,22 @@ void ab_free(struct abuf *ab) {
 
 //output
 void editor_scroll() {
+	E.rx = 0;
+	if (E.cy < E.numrows) {
+		E.rx = editor_row_cx_to_rx(&E.row[E.cy],E.cx);
+	}
+
 	if (E.cy < E.rowoff) { // in the visible region setting offset with current cursor position
 		E.rowoff = E.cy;
 	}
 	if (E.cy >= E.rowoff + E.screen_rows) { //out of bottom screen
 		E.rowoff = E.cy - E.screen_rows +1;
 	}
-	if (E.cx < E.coloff) { //in the visible region
-		E.coloff = E.cx;
+	if (E.rx < E.coloff) { //in the visible region
+		E.coloff = E.rx;
 	}
-	if (E.cx >= E.coloff+E.screen_cols) { //out of right screen
-		E.coloff = E.cx - E.screen_cols + 1;
+	if (E.rx >= E.coloff+E.screen_cols) { //out of right screen
+		E.coloff = E.rx - E.screen_cols + 1;
 	}
 }
 
@@ -365,7 +387,7 @@ void editor_refresh_screen() {
 	editor_draw_rows(&ab);
 
 	char buf[32];
-	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",(E.cy-E.rowoff+1),(E.cx-E.coloff+1));
+	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",(E.cy-E.rowoff+1),(E.rx-E.coloff+1));
 	ab_append(&ab,buf,strlen(buf));
 
 	ab_append(&ab,"\x1b[?25h",6); //show cursor
@@ -463,6 +485,7 @@ void init_editor() {
 
 	E.cx = 0;
 	E.cy = 0;
+	E.rx = 0;
 	E.numrows = 0;
 	E.row = NULL;
 	E.rowoff = 0;
