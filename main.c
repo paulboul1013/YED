@@ -362,7 +362,12 @@ void editor_move_cursor(int key) {
 		if (row && E.cx < row->size){ //check cursor is on the actual line can move right
 			E.cx++;
 		}
-			break;
+		else if (row && E.cx==row->size){//move cursor to next line start position
+			E.cy++; //next line
+			E.cx = 0; //next line start position
+		}
+		break;
+		
 		case ARROW_UP:
 		if (E.cy!=0) {
 			E.cy--;
