@@ -352,7 +352,11 @@ void editor_move_cursor(int key) {
 		if (E.cx!=0) {
 			E.cx--;
 		}
-			break;
+		else if (E.cy > 0 ) { //move cursor to last line
+			E.cy--; //last row
+			E.cx = E.row[E.cy].size; //last line last char
+		}
+		break;
 
 		case ARROW_RIGHT:
 		if (row && E.cx < row->size){ //check cursor is on the actual line can move right
