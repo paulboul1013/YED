@@ -42,8 +42,8 @@ typedef struct erow {
 struct editor_config {
 	int cx,cy; //cursor x and y coordinate
 	int rx; //render x coordinate
-	int rowoff; //row offset
-	int coloff; //column offset
+	int rowoff; //cursor row offset
+	int coloff; //cursor column offset
 	int screen_rows; //screen rows
 	int screen_cols; //screen columns
 	struct termios orig_termios;
@@ -464,6 +464,14 @@ void editor_process_keypress() {
 		case PAGE_UP:
 		case PAGE_DOWN:
 		{
+			if (c==PAGE_UP){ //move cursor to top of screen
+				E.cy = E.rowoff; 
+			} else if (c==PAGE_DOWN) { //move cursor to bottom of screen
+				E.cy = E.rowoff+E.screen_rows-1; 
+				if (E.cy > E.numrows) {
+					E.cy = E.numrows;
+				}
+			}
 			int times=E.screen_rows;
 			while (times--) {
 				editor_move_cursor(c==PAGE_UP? ARROW_UP:ARROW_DOWN);
