@@ -5,11 +5,13 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 
 //defines
@@ -50,6 +52,8 @@ struct editor_config {
 	int numrows;
 	erow *row;
 	char *filename;
+	char statusmsg[80];
+	time_t statusmsg_time;
 };
 
 struct editor_config E;
@@ -402,6 +406,18 @@ E.filename ? E.filename : "[No Name]",E.numrows);
 		}
 	}
 	ab_append(ab,"\x1b[m",3); //turn off inverting colors
+	ab_append(ab,"\r\n",2);
+}
+
+void editor_draw_messagebar(struct abuf *ab) {
+	ab_append(ab,"\x1b[K",3); //clear from right of the cursor side for bottom of line
+	int msg_len=strlen(E.statusmsg);
+	if (msg_len > E.screen_cols){
+		msg_len = E.screen_cols;
+	}
+	if (msg_len && time(NULL)-E.statusmsg_time < 5) { //only show less 5 seconds
+		ab_append(ab,E.statusmsg,msg_len);
+	} 
 }
 
 void editor_refresh_screen() {
@@ -414,6 +430,7 @@ void editor_refresh_screen() {
 
 	editor_draw_rows(&ab);
 	editor_draw_statusbar(&ab);
+	editor_draw_messagebar(&ab);
 
 	char buf[32];
 	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",(E.cy-E.rowoff+1),(E.rx-E.coloff+1));
@@ -425,7 +442,13 @@ void editor_refresh_screen() {
 	ab_free(&ab);
 }
 
-
+void editor_set_status_message(const char *fmt, ...){
+	va_list ap;
+	va_start(ap,fmt);
+	vsnprintf(E.statusmsg,sizeof(E.statusmsg),fmt,ap);
+	va_end(ap);
+	E.statusmsg_time = time(NULL); //get current time;
+}
 
 
 //input
@@ -530,12 +553,14 @@ void init_editor() {
 	E.rowoff = 0;
 	E.coloff = 0;
 	E.filename = NULL;
+	E.statusmsg[0]='\0';
+	E.statusmsg_time = 0;
 
 	if (get_window_size(&E.screen_rows,&E.screen_cols)==-1) {
 		die("get_window_size");
 	}
 
-	E.screen_rows -=1; //leave space for status bar
+	E.screen_rows -=2; //leave space for status bar
 }
 
 int main(int argc,char *argv[]) {
@@ -545,6 +570,8 @@ int main(int argc,char *argv[]) {
 	if (argc>=2) {
 		editor_open(argv[1]);
 	}
+
+	editor_set_status_message("help: ctrl-q = quit");
 	
 
 	while (1) {
