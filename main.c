@@ -21,6 +21,7 @@
 #define YED_TAB_STOP 4
 
 enum editor_key {
+	BACKSPACE = 127,
 	ARROW_LEFT = 1000,
 	ARROW_RIGHT,
 	ARROW_UP,
@@ -521,6 +522,8 @@ void editor_process_keypress() {
 	int c = editor_readkey();
 
 	switch (c) {
+		case '\r':
+			break;
 		case CTRL_KEY('q'): //mapping ctrl-q to exit
 			write(STDOUT_FILENO,"\x1b[2J",4);
 			write(STDOUT_FILENO,"\x1b[H",3);
@@ -534,6 +537,12 @@ void editor_process_keypress() {
 			if (E.cy < E.numrows) { //move cursor to end of the line
 				E.cx = E.row[E.cy].size;
 			}
+			break;
+
+		case BACKSPACE:
+		case CTRL_KEY('h'):
+		case DEL_KEY:
+
 			break;
 
 		case PAGE_UP:
@@ -560,6 +569,10 @@ void editor_process_keypress() {
 		case ARROW_RIGHT:
 			editor_move_cursor(c);
 			break;
+
+		case CTRL_KEY('l'):
+		case '\x1b': //[ character
+		break;
 
 		default:
 			editor_insert_char(c);
