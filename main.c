@@ -20,6 +20,7 @@
 
 #define YED_VERSION "0.0.1"
 #define YED_TAB_STOP 4
+#define YED_QUIT_TIMES 2
 
 enum editor_key {
 	BACKSPACE = 127,
@@ -573,12 +574,19 @@ void editor_move_cursor(int key) {
 }
 
 void editor_process_keypress() {
+	static int quit_times = YED_QUIT_TIMES;
+	
 	int c = editor_readkey();
 
 	switch (c) {
 		case '\r':
 			break;
 		case CTRL_KEY('q'): //mapping ctrl-q to exit
+			if (E.dirty && quit_times > 0) {
+				editor_set_status_message("WARNING! file is on the unsaved status. press ctrl-q %d more times to quit YED",quit_times);
+				quit_times--;
+				return;
+			}
 			write(STDOUT_FILENO,"\x1b[2J",4);
 			write(STDOUT_FILENO,"\x1b[H",3);
 			exit(0);
@@ -636,6 +644,8 @@ void editor_process_keypress() {
 			editor_insert_char(c);
 			break;
 	}
+
+	quit_times = YED_QUIT_TIMES;
 }
 
 //init
