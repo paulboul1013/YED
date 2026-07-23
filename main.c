@@ -64,7 +64,8 @@ struct editor_config E;
 
 //prototypes
 void editor_set_status_message(const char *fmt, ...);
-
+void editor_refresh_screen();
+char *editor_prompt(char *prompt);
 //terminal
 
 void die(const char *s) {
@@ -426,7 +427,11 @@ void editor_open(char *filename) {
 
 void editor_save() {
 	if (E.filename==NULL) {
-		return;
+		E.filename = editor_prompt("save as : %s (ESC to cancel)");
+		if (E.filename==NULL) {
+			editor_set_status_message("save aborted");
+			return;
+		}
 	}
 
 	int len;
@@ -607,6 +612,42 @@ void editor_set_status_message(const char *fmt, ...){
 
 
 //input
+char *editor_prompt(char *prompt) {
+	size_t buf_size = 128;
+	char *buf = malloc(buf_size);
+
+	size_t buf_len=0;
+	buf[0] = '\0';
+
+	while (1) {
+		editor_set_status_message(prompt,buf);
+		editor_refresh_screen();
+
+		int c = editor_readkey();
+		if (c==DEL_KEY || c== CTRL_KEY('h') || c==BACKSPACE) {
+			if (buf_len!=0) {
+				buf[--buf_len]='\0';
+			}
+		} else if (c=='\x1b') { //cancel input with press ESC
+			editor_set_status_message("");
+			free(buf);
+			return NULL;
+		} else if (c=='\r') { //press enter
+			if (buf_len!=0) {
+				editor_set_status_message("",buf);
+				return buf;
+			}
+		} else if (!iscntrl(c) && c < 128) { //input normal character
+			if (buf_len==buf_size-1){
+				buf_size*=2;
+				buf = realloc(buf,buf_size);
+			}
+			buf[buf_len++]=c;
+			buf[buf_len] = '\0';
+		}
+	}
+}
+
 void editor_move_cursor(int key) {
 	//check cursor is on actual line
 	erow *row = (E.cy >= E.numrows) ? NULL: &E.row[E.cy];
