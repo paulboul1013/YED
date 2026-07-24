@@ -37,11 +37,13 @@ enum editor_key {
 
 enum editor_hight_light {
 	HL_NORMAL = 0,
+	HL_STRING,
 	HL_NUMBER,
 	HL_MATCH
 };
 
 #define HL_HIGHLIGHT_NUMBERS (1<<0)
+#define HL_HIGHLIGHT_STRINGS (1<<1)
 
 //data
 struct editor_syntax {
@@ -84,7 +86,7 @@ struct editor_syntax HLDB[] ={
 	{
 		"c",
 		C_HL_extension,
-		HL_HIGHLIGHT_NUMBERS
+		HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
 	},
 };
 
@@ -260,13 +262,39 @@ void editor_update_syntax(erow *row) {
 	}
 
 	int prev_sep = 1;
+	int in_string = 0;
 
 	int i=0;
 	while (i < row->rsize){
 		char c= row->render[i];
 		unsigned char prev_hl = (i>0)? row->hl[i-1]:HL_NORMAL;
-		
-		if (E.syntax->flags && HL_HIGHLIGHT_NUMBERS) {
+
+		if (E.syntax->flags & HL_HIGHLIGHT_STRINGS) {
+			if (in_string) { 
+				row->hl[i]=HL_STRING;
+				if (c=='\\' && i+1 < row->rsize) {  // '\' in the string
+					row->hl[i+1]=HL_STRING;
+					i+=2;
+					continue;
+				}
+
+				if (c==in_string) { //encounter the closing quote
+					in_string=0;
+					i++;
+					prev_sep=1;
+					continue;
+				} 
+			}else{
+				if (c=='"' || c=='\'') { //first encounter the begin quote
+					in_string=c;
+					row->hl[i]=HL_STRING;
+					i++;
+					continue;
+				}
+			}
+		}
+
+		if (E.syntax->flags & HL_HIGHLIGHT_NUMBERS) {
 			if ((isdigit(c) && (prev_sep || prev_hl==HL_NUMBER)) ||
 				(c=='.' && prev_hl==HL_NUMBER)){
 				//continous number and decimal point
@@ -315,6 +343,8 @@ void editor_select_syntax_highlight() {
 //maps values in hl to actual ANSI color codes
 int editor_syntax_to_color(int hl) {
 	switch (hl) {
+		case HL_STRING:
+			return 35; //magenta(洋紅色)
 		case HL_NUMBER:
 			return 31; //red
 		case HL_MATCH:
