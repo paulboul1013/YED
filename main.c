@@ -614,7 +614,19 @@ void editor_draw_rows(struct abuf *ab) {
 			int len = E.row[filerow].rsize - E.coloff;
 			if (len < 0) len = 0;
 			if (len > E.screen_cols) len = E.screen_cols;
-			ab_append(ab,&E.row[filerow].render[E.coloff],len);
+			char *c = &E.row[filerow].render[E.coloff];
+			int j;
+			for(j=0;j<len;j++){
+				if (isdigit(c[j])){ 
+					//if the character is a digit,print it in red
+					ab_append(ab,"\x1b[31m",5);
+					ab_append(ab,&c[j],1);
+					ab_append(ab,"\x1b[39m",5);
+				} else{ //otherwise,print it in normal color
+					ab_append(ab,&c[j],1);
+				}
+			}
+			
 		}
 			
 		ab_append(ab,"\x1b[K",3); //clear from right of the cursor side
