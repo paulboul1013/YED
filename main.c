@@ -37,6 +37,7 @@ enum editor_key {
 
 enum editor_hight_light {
 	HL_NORMAL = 0,
+	HL_COMMENT,
 	HL_STRING,
 	HL_NUMBER,
 	HL_MATCH
@@ -343,6 +344,8 @@ void editor_select_syntax_highlight() {
 //maps values in hl to actual ANSI color codes
 int editor_syntax_to_color(int hl) {
 	switch (hl) {
+		case HL_COMMENT:
+			return 36; //cyan(青色)
 		case HL_STRING:
 			return 35; //magenta(洋紅色)
 		case HL_NUMBER:
