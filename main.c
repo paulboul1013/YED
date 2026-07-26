@@ -336,7 +336,7 @@ void editor_update_syntax(erow *row) {
 			int j;
 			for(j=0;keywords[j];j++) {
 				int klen=strlen(keywords[j]);
-				int kw2=keywords[j][klen-1]=='|';
+				int kw2=keywords[j][klen-1]=='|'; //check if the keyword is a second type of keyword
 				if (kw2) {
 					klen--;
 				}
@@ -835,7 +835,18 @@ void editor_draw_rows(struct abuf *ab) {
 			int current_color = -1;
 			int j;
 			for(j=0;j<len;j++){
-				if (hl[j]==HL_NORMAL){  //print it in normal color
+				if (iscntrl(c[j])) {
+					char sym = (c[j]<=26) ? '@'+c[j] : '?';
+					ab_append(ab,"\x1b[7m",4); //inverting colors
+					ab_append(ab,&sym,1);
+					ab_append(ab,"\x1b[m",3); //turn off inverting colors
+					if (current_color!=-1){
+						char buf[16];
+						int clen = snprintf(buf,sizeof(buf),"\x1b[%dm",current_color);
+						ab_append(ab,buf,clen);
+					}
+				}
+				else if (hl[j]==HL_NORMAL){  //print it in normal color
 					if (current_color != -1){
 						ab_append(ab,"\x1b[39m",5);
 						current_color = -1;
