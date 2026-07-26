@@ -294,10 +294,10 @@ void editor_update_syntax(erow *row) {
 
 				if (c==in_string) { //encounter the closing quote
 					in_string=0;
-					i++;
-					prev_sep=1;
-					continue;
 				} 
+				i++;
+				prev_sep=1;
+				continue;
 			}else{
 				if (c=='"' || c=='\'') { //first encounter the begin quote
 					in_string=c;
