@@ -38,6 +38,8 @@ enum editor_key {
 enum editor_hight_light {
 	HL_NORMAL = 0,
 	HL_COMMENT,
+	HL_KEYWORD1,
+	HL_KEYWORD2,
 	HL_STRING,
 	HL_NUMBER,
 	HL_MATCH
@@ -359,6 +361,10 @@ int editor_syntax_to_color(int hl) {
 	switch (hl) {
 		case HL_COMMENT:
 			return 36; //cyan(青色)
+		case HL_KEYWORD1:
+			return 33; //yellow
+		case HL_KEYWORD2:
+			return 32; //green
 		case HL_STRING:
 			return 35; //magenta(洋紅色)
 		case HL_NUMBER:
