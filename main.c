@@ -202,7 +202,38 @@ int editor_readkey() {
 						case '8' : return END_KEY;
 					}
 				}
-			} else {
+			} 
+			//parse mouse scroll format
+			else if (seq[1]=='<'){ //ESC[<64;10;20M
+				char buf[32];
+				int i=0;
+
+				while (i<(int)sizeof(buf)-1) {
+					if (read(STDIN_FILENO,&buf[i],1)!=1){
+						return '\x1b'; //return esc
+					}
+					if (buf[i]=='M' || buf[i]=='m'){ //end of the mouse sequence
+						break;
+					}
+					i++;
+				}
+				buf[i+1]='\0';
+
+				int button,x,y;
+				char event_type;
+				if (sscanf(buf,"%d;%d;%d%c",&button,&x,&y,&event_type)==4) {
+					if (button==64) {
+						return MOUSE_SCROLL_UP;
+					}
+					if (button==65) {
+						return MOUSE_SCROLL_DOWN;
+					}
+				}
+
+				return '\x1b';
+
+			} 
+			else {
 				switch (seq[1]) { //parse arrow keys
 					case 'A' :return ARROW_UP;
 					case 'B' :return ARROW_DOWN;
