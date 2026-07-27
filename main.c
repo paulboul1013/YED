@@ -914,7 +914,7 @@ void editor_draw_rows(struct abuf *ab) {
 					ab_append(ab,&c[j],1);
 				}
 			}
-			ab_append(ab,"\x1b[39m",3); //reset white color
+			ab_append(ab,"\x1b[39m",5); //reset white color
 			
 		}
 			
