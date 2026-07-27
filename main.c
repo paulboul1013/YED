@@ -132,6 +132,9 @@ void disable_rawmode() {
 	if (tcsetattr(STDIN_FILENO,TCSAFLUSH,&E.orig_termios)==-1) {
 		die("tcsetattr");
 	}
+	write(STDOUT_FILENO, "\x1b[?1000l", 8); //disable basic mouse reporting
+	write(STDOUT_FILENO, "\x1b[?1006l", 8); //disable SGR extended mouse mode
+	write(STDOUT_FILENO, "\x1b[?1049l", 8); //disable alternate screen buffer
 }
 
 void enable_rawmode() {
@@ -153,6 +156,10 @@ void enable_rawmode() {
 
 	raw.c_cc[VMIN] = 0;
 	raw.c_cc[VTIME] = 1;
+
+	write(STDOUT_FILENO, "\x1b[?1000h", 8); //enable basic mouse reporting
+	write(STDOUT_FILENO, "\x1b[?1006h", 8); //enable SGR extended mouse mode
+	write(STDOUT_FILENO, "\x1b[?1049h", 8); //enable alternate screen buffer
 
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw)) {
 		die("tcsetattr");
