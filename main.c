@@ -300,7 +300,7 @@ void editor_update_syntax(erow *row) {
 		unsigned char prev_hl = (i>0)? row->hl[i-1]:HL_NORMAL;
 
 
-		if (scs_len && !in_string) { //have single line comment and not in string "..."
+		if (scs_len && !in_string && !in_comment) { //have single line comment and not in string "..."
 			if (!strncmp(&row->render[i],scs,scs_len)) { //copy rest of the  text to hl buffer
 				memset(&row->hl[i],HL_COMMENT,row->rsize-i);
 				break;
