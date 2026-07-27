@@ -1145,6 +1145,23 @@ void editor_process_keypress() {
 			exit(0);
 			break;
 
+		//mapping mouse scroll up and down to ARROW_UP and ARROW_DOWN
+		case MOUSE_SCROLL_UP:{
+			int times = 3;
+			while (times--) {
+				editor_move_cursor(ARROW_UP);
+			}
+			break;
+		}
+
+		case MOUSE_SCROLL_DOWN:{
+			int times = 3;
+			while (times--) {
+				editor_move_cursor(ARROW_DOWN);
+			}
+			break;
+		}
+
 		case CTRL_KEY('s'):
 			editor_save();
 			break;
