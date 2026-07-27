@@ -289,9 +289,10 @@ void editor_update_syntax(erow *row) {
 	int mcs_len = mcs ? strlen(mcs) : 0;
 	int mce_len = mce ? strlen(mce) : 0;
 
-	
+
 	int prev_sep = 1;
 	int in_string = 0;
+	int in_comment = 0;
 
 	int i=0;
 	while (i < row->rsize){
@@ -303,6 +304,27 @@ void editor_update_syntax(erow *row) {
 			if (!strncmp(&row->render[i],scs,scs_len)) { //copy rest of the  text to hl buffer
 				memset(&row->hl[i],HL_COMMENT,row->rsize-i);
 				break;
+			}
+		}
+
+		if (mcs_len && mce_len && !in_string) {
+			if (in_comment) {
+				row->hl[i]=HL_MLCOMMENT; //comment text 
+				if (!strncmp(&row->render[i],mce,mce_len)) { //comment end
+					memset(&row->hl[i],HL_MLCOMMENT,mce_len);
+					i += mce_len;
+					in_comment=0;
+					prev_sep=1;
+					continue;
+				} else{ //comment text
+					i++;
+					continue;
+				}
+			} else if (!strncmp(&row->render[i],mcs,mcs_len)) { //comment start
+				memset(&row->hl[i],HL_MLCOMMENT,mcs_len);
+				i+=mcs_len;
+				in_comment=1;
+				continue;
 			}
 		}
 		
