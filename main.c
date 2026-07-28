@@ -120,6 +120,24 @@ void editor_refresh_screen();
 char *editor_prompt(char *prompt,void (*callback)(char *,int));
 //terminal
 
+//use number of the rows to calculate the width of the line number
+int editor_line_number_width() {
+	int rows = E.numrows;
+	int max_visible_row = E.rowoff + E.screen_rows;
+	int digits = 1;
+
+	if (rows < max_visible_row) {
+		rows = max_visible_row;
+	}
+	
+	while(rows>=10) {
+		rows/=10;
+		digits++;
+	}
+
+	return digits;
+}
+
 void die(const char *s) {
 	write(STDOUT_FILENO,"\x1b[2J",4);
 	write(STDOUT_FILENO,"\x1b[H",3);
@@ -890,19 +908,37 @@ void editor_scroll() {
 
 void editor_draw_rows(struct abuf *ab) {
 	int y;
+
+	//space + "|" + space
+	//E.numrows =0 -> row line width = 1
+	//E.numrows =100 -> row line width = 3
+	int gutter_width = editor_line_number_width()+3;
+	int text_width = E.screen_cols - gutter_width;
+	if (text_width < 0) {
+		text_width = 0;
+	}
+
+
 	for(y=0;y<E.screen_rows;y++){
 		int filerow = y+E.rowoff;
+
 		if (filerow>=E.numrows) {
-			if (E.numrows==0 && y==E.screen_rows/3) {
+			
+			char lineno[32];
+			int line_width = editor_line_number_width();
+			int gutter_len = snprintf(lineno, sizeof(lineno), "%*d | ", line_width, filerow + 1);
+			ab_append(ab, lineno, gutter_len);
+
+			if (E.numrows==0 && y==E.screen_rows/3) { //welcome message
 				char welcome[80];
 				int welcome_len=snprintf(welcome,sizeof(welcome),
 			"YED editor -- version %s",YED_VERSION);
 
-				if (welcome_len > E.screen_cols) {
-					welcome_len = E.screen_cols;
+				if (welcome_len > text_width) {
+					welcome_len = text_width;
 				}
 
-				int padding = (E.screen_cols - welcome_len)/2;
+				int padding = (text_width - welcome_len)/2;
 				if (padding) {
 					ab_append(ab,"~",1);
 					padding--;
@@ -913,18 +949,24 @@ void editor_draw_rows(struct abuf *ab) {
 				}
 
 				ab_append(ab,welcome,welcome_len);
-			} else {
+			} else { //not insert text
 				ab_append(ab,"~",1);
 			}
 
 		} else { //render text of file
 			int len = E.row[filerow].rsize - E.coloff;
 			if (len < 0) len = 0;
-			if (len > E.screen_cols) len = E.screen_cols;
+			if (len > text_width) len = text_width; //setting text width
 			char *c = &E.row[filerow].render[E.coloff];
 			unsigned char *hl = &E.row[filerow].hl[E.coloff];
 			int current_color = -1;
 			int j;
+
+			char lineno[32];
+			int line_width = editor_line_number_width();
+			int gutter_len = snprintf(lineno, sizeof(lineno), "%*d | ", line_width, filerow + 1);
+			ab_append(ab, lineno, gutter_len);
+
 			for(j=0;j<len;j++){
 				if (iscntrl(c[j])) {
 					char sym = (c[j]<=26) ? '@'+c[j] : '?';
@@ -1015,8 +1057,10 @@ void editor_refresh_screen() {
 	editor_draw_statusbar(&ab);
 	editor_draw_messagebar(&ab);
 
+	int gutter_width = editor_line_number_width() + 3;
+
 	char buf[32];
-	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",(E.cy-E.rowoff+1),(E.rx-E.coloff+1));
+	snprintf(buf,sizeof(buf),"\x1b[%d;%dH",(E.cy-E.rowoff+1),(E.rx-E.coloff+gutter_width+1));
 	ab_append(&ab,buf,strlen(buf));
 
 	ab_append(&ab,"\x1b[?25h",6); //show cursor
