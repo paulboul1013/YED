@@ -9,6 +9,8 @@ clean:
 test:
 	@test_binary=$$(mktemp /tmp/yed-line-numbers.XXXXXX) || exit 1; \
 	trap 'rm -f "$$test_binary"' EXIT; \
-	$(CC) tests/line_numbers.c -o "$$test_binary" $(CFLAGS) && "$$test_binary"
+	for test_source in tests/line_numbers.c tests/horizontal_scroll.c; do \
+		$(CC) "$$test_source" -o "$$test_binary" $(CFLAGS) && "$$test_binary" || exit 1; \
+	done
 
 .PHONY: clean test

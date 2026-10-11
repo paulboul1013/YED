@@ -512,12 +512,8 @@ int editor_row_cx_to_rx(erow *row,int cx) {
 	int j;
 	for(j=0;j<cx;j++) {
 		if (row->chars[j]=='\t') {
-			//ex: a\t\b
-			// meet a and then rx++, rx=1,next is '\t'
-			// rx+=4-(1%4)=4-1=3;
-			// 1+=4 -> rx=5 and then rx++ -> rx=6
-			//so really the b character render index is from 6 start calculate
-			rx+=YED_TAB_STOP-(rx%YED_TAB_STOP);
+			//The rx++ below counts the tab's final column.
+			rx+=(YED_TAB_STOP-1)-(rx%YED_TAB_STOP);
 		}
 		rx++;
 	}
@@ -896,8 +892,10 @@ void editor_scroll() {
 	if (E.rx < E.coloff) { //in the visible region
 		E.coloff = E.rx;
 	}
-	if (E.rx >= E.coloff+E.screen_cols) { //out of right screen
-		E.coloff = E.rx - E.screen_cols + 1;
+	int text_width = E.screen_cols - editor_line_number_width() - 3;
+	if (text_width < 1) text_width = 1;
+	if (E.rx >= E.coloff+text_width) { //out of right text area
+		E.coloff = E.rx - text_width + 1;
 	}
 }
 
