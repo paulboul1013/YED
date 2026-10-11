@@ -123,13 +123,8 @@ char *editor_prompt(char *prompt,void (*callback)(char *,int));
 //use number of the rows to calculate the width of the line number
 int editor_line_number_width() {
 	int rows = E.numrows;
-	int max_visible_row = E.rowoff + E.screen_rows;
 	int digits = 1;
 
-	if (rows < max_visible_row) {
-		rows = max_visible_row;
-	}
-	
 	while(rows>=10) {
 		rows/=10;
 		digits++;
