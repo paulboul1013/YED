@@ -926,7 +926,7 @@ void editor_draw_rows(struct abuf *ab) {
 			
 			char lineno[32];
 			int line_width = editor_line_number_width();
-			int gutter_len = snprintf(lineno, sizeof(lineno), "%*d | ", line_width, filerow + 1);
+			int gutter_len = snprintf(lineno, sizeof(lineno), "%*s | ", line_width, "");
 			ab_append(ab, lineno, gutter_len);
 
 			if (E.numrows==0 && y==E.screen_rows/3) { //welcome message
